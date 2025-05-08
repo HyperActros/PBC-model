@@ -1,4 +1,4 @@
-% This code is made by Junjie Xiao on 2025/01/22
+% This code is made by HyperActros on 2025/01/22
 % Special thank to Dr. Michael Okereke
 %             YPos
 %       N4 ------------ N3
@@ -17,7 +17,7 @@ outputFileName = 'outputFile.inp';  % 输出的模型文件名
 Make_Edge_Nodes_Set(inpFileName, outputFileName);
 %% Create nodes set as Matrix
 % This is father function
-function Make_Edge_Nodes_Set(inpFileName, outputFileName)
+function Make_Edge_Nodes_Set(inpFileName, outputFileName) % Preprocess information
     % Open the input file
     fidIn = fopen(inpFileName, 'r');
     if fidIn == -1
@@ -27,8 +27,8 @@ function Make_Edge_Nodes_Set(inpFileName, outputFileName)
     nodes = [];
     inNodeSection = false;
 
-    %逐行读取 .inp 文件内容,如果检测到 *Node，标记为节点部分的开始。
-    %遇到另一个 *标记的内容时，结束读取。
+    %逐行读取 .inp 文件内容,如果检测到 *Node，标记为节点部分的开始
+    %遇到另一个 *标记的内容时，结束读取
     while ~feof(fidIn)
         line = strtrim(fgets(fidIn));
         if startsWith(line, '*Node', 'IgnoreCase', true)
@@ -46,8 +46,8 @@ function Make_Edge_Nodes_Set(inpFileName, outputFileName)
         end
     end    
     fclose(fidIn);
-    %到此，我们有所有节点编号和坐标的数据
-    %分别存储到 nodeID 和 coords 中。
+    %到此，我们得到所有节点编号和坐标的数据
+    %分别存储到 nodeID 和 coords 中
     nodeID = nodes(:, 1);
     coords = nodes(:, 2:end);
 
@@ -58,7 +58,7 @@ function Make_Edge_Nodes_Set(inpFileName, outputFileName)
     ymax = max(coords(:, 2));
 
     % 创建四条边的set
-    % 将set按升序条件排序
+    % 将set按升序条件排序（从下到上，从左到右）
     xNeg = nodes(abs(coords(:, 1) - xmin) < 1e-6);
     xPos = nodes(abs(coords(:, 1) - xmax) < 1e-6);
     yNeg = nodes(abs(coords(:, 2) - ymin) < 1e-6);
@@ -71,6 +71,7 @@ function Make_Edge_Nodes_Set(inpFileName, outputFileName)
     xPosNum = xPos(:, 1);
     yNegNum = yNeg(:, 1);
     yPosNum = yPos(:, 1);
+    
     % Create Corner Nodes
     cornerNodesN1 = xNeg(1,1);
     cornerNodesN2 = yNeg(end,1);
@@ -82,12 +83,12 @@ function Make_Edge_Nodes_Set(inpFileName, outputFileName)
     yPosInt         = setdiff(yPosNum, cornerNodes, 'stable');
     yNegInt         = setdiff(yNegNum, cornerNodes, 'stable');
 
-    %嵌套函数a
+    %嵌套函数a（这里才是创建output文件）
     Writing_Into_OutputFile(inpFileName, outputFileName, ...
         cornerNodesN1, cornerNodesN2, cornerNodesN3, cornerNodesN4, ...
         xNegNum, xPosNum, yNegNum, yPosNum, ...
         xNegInt, xPosInt, yNegInt, yPosInt);
-    fprintf('脚本已完成！ %s\n', outputFileName);
+    fprintf('脚本已完成！ %\n', outputFileName);
 end
 
 %% 
@@ -132,7 +133,7 @@ function Writing_Into_OutputFile(inpFileName, outputFileName, ...
         %嵌套函数c
         PBC_equation_writing(fidOut,x1, x2, N1, N2);
         PBC_equation_writing(fidOut,y1, y2, N1, N4);
-        %Connect cornerNodes (only along X-axis)
+        %Connect cornerNodes （链接四个角节点）
         for l = 1
             fprintf(fidOut, '** -------------------------------------\n');
             fprintf(fidOut, '** XEdge >> Constraint: Eqn-%d_11_local_axis for N3 \n', l);
@@ -155,15 +156,15 @@ function Writing_Into_OutputFile(inpFileName, outputFileName, ...
         insert_code = false;
         end
 
-        fprintf(fidOut, '%s', line);
+        fprintf(fidOut, '%', line);
     end
     fclose(fidIn);
     fclose(fidOut);
 end
 
-%% Write node-set into input file
+%% Write node-set into input file 将边节点创建节点集
 function writeNodeSet(fid, setName, nodeIDs, Instance)
-    fprintf(fid, '*Nset, nset=%s, instance=%s\n', setName, Instance{1});
+    fprintf(fid, '*Nset, nset=%, instance=%\n', setName, Instance{1});
     for i = 1:length(nodeIDs)
         if mod(i, 5) == 1 && i ~= 1
             fprintf(fid, '\n'); % Add newline for every 5 nodes
@@ -173,7 +174,7 @@ function writeNodeSet(fid, setName, nodeIDs, Instance)
     fprintf(fid, '\n');
 end
 
-%% Add PBC for the opposite side
+%% Add PBC for the opposite side 写入PBC约束
 function PBC_equation_writing(fidNSetEqn, Int1, Int2, N1, N2)
     EdgeInt        = [Int1 Int2];
     %fidNSetEqn = fopen(outputFileName, 'a+');
